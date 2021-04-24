@@ -1,5 +1,9 @@
 # build sia
-FROM golang:1.16 AS build
+FROM golang:1.16-alpine AS build
+
+RUN apk update && \
+	apk add --no-cache git make ca-certificates && \
+	update-ca-certificates
 
 WORKDIR /app
 
@@ -7,16 +11,13 @@ COPY . .
 
 ENV GOBIN=/app/bin
 
-# updates the cache to fix GIT_DIRTY detection in makefile
-RUN git status > /dev/null
-RUN make release
+# need to run git status first to fix GIT_DIRTY detection in makefile
+RUN git status > /dev/null && \
+	make release
 
-# run sia
-FROM debian:stable-slim
+FROM alpine
 
-# debian-slim does not come with any certs, copy to prevent SSL issues
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-# copy built binaries
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /app/bin /usr/local/bin
 
 EXPOSE 9981 9982 9983 9984
