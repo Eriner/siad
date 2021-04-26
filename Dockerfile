@@ -13,12 +13,12 @@ ENV GOBIN=/app/bin
 
 # need to run git status first to fix GIT_DIRTY detection in makefile
 RUN git status > /dev/null && \
-	make release
+	make static
 
-FROM alpine
+FROM scratch
 
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=build /app/bin /usr/local/bin
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=build /app/release /
 
 EXPOSE 9981 9982 9983 9984
 
@@ -29,4 +29,4 @@ ENV SIA_API_PASSWORD=
 
 VOLUME [ "/sia-data" ]
 
-ENTRYPOINT [ "siad", "--disable-api-security", "-d", "/sia-data", "--api-addr", ":9980" ]
+ENTRYPOINT [ "/siad", "--disable-api-security", "-d", "/sia-data", "--api-addr", ":9980" ]
